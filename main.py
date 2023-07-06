@@ -18,7 +18,8 @@ class Sim:
     def print_traits(self):
         print(f"{self.name} traits:")
         for trait in self.traits.__dict__:
-            print(trait, ":", getattr(self.traits, trait))
+            trait_value = getattr(self.traits, trait)
+            print(f"{trait}: {trait_value * 100 : 0.2f}% (other {trait_value})")
 
 jacob = Sim("Jacob")
 jacob.print_traits()
