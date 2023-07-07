@@ -1,5 +1,5 @@
 import math
-from random import random
+from random import random, randint
 
 class GLOBALS(object):
     def __init__(self):
@@ -57,21 +57,22 @@ class Sim():
         self.broadcasts = broadcasts
         self.broadcasts.bind_to(self.broadcast_listener)
 
-    def weightStats(self):
+    def weighStats(self):
         # see https://www.desmos.com/calculator/govcchz6s5
-        self.wants["HUNGER"] = (1 / math.exp(self.stats["HUNGER"])) ** 4  # (\frac{1}{e^x})^4
-        self.wants["ENERGY"] = (1 / math.exp(self.stats["ENERGY"])) ** 7  # (\frac{1}{e^x})^7
-        self.wants["HYGIENE"] = 1 - self.stats["HYGIENE"] ** (1 / 2)  # 1 - x^{\frac{1}{2}} (or sqrt(x))
-        self.wants["BLADDER"] = 1 - self.stats["BLADDER"] ** (1 / 3)  # 1 - x^{\frac{1}{3}} (or cube root)
-        self.wants["FUN"] = 1 - self.stats["FUN"] ** (self.traits["EXTRAVER"] + self.traits["OPENNESS"])
-        self.wants["SOCIAL"] = self.wants["FUN"]
+        self.wants["HUNGER"]  = (1 / math.exp(self.stats["HUNGER"])) ** 4  # (\frac{1}{e^x})^4
+        self.wants["ENERGY"]  = (1 / math.exp(self.stats["ENERGY"])) ** 7  # (\frac{1}{e^x})^7
+        self.wants["HYGIENE"] = 1 - self.stats["HYGIENE"] ** (1 / 2)       # 1 - x^{\frac{1}{2}} (or sqrt(x))
+        self.wants["BLADDER"] = 1 - self.stats["BLADDER"] ** (1 / 3)       # 1 - x^{\frac{1}{3}} (or cube root)
+        self.wants["FUN"]     = 1 - self.stats["FUN"] ** (self.traits["EXTRAVER"] + self.traits["OPENNESS"])
+        self.wants["SOCIAL"]  = self.wants["FUN"]
+
+        return sorted(self.wants.items(), key=lambda x: x[1], reverse=True)
 
     def broadcast_listener(self, broadcasts):
         # a new item broadcasted itself
         print(f"Object '{broadcasts[-1].name}' broadcasted")
-        self.weightStats()
-        self.print_dict(self.wants)
-        self.print_dict(self.stats)
+        weighedStats = self.weighStats()
+        print(f"Sim chose {weighedStats[randint(0, 2)]}...\n...with priorities {weighedStats}")
 
     def print_dict(self, dict):
         for dict_item, dict_value in dict.items():
