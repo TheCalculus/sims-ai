@@ -1,5 +1,5 @@
 import math
-from random import *
+from random import random
 
 class GLOBALS(object):
     def __init__(self):
@@ -19,29 +19,11 @@ class GLOBALS(object):
     def bind_to(self, callback):
         self._observers.append(callback)
 
-# the five basic personality traits by D. W. Fiske
-class Traits():
-    def __init__(self, extraversion, openness, agreeableness, conscientiousness, neuroticism):
-        self.EXTRAVER = extraversion 
-        self.OPENNESS = openness
-        self.AGREEABL = agreeableness
-        self.CONSCIEN = conscientiousness
-        self.NEUROTIC = neuroticism
-
-class Stats():
-    def __init__(self, hunger, energy, hygiene, bladder, fun, social):
-        self.HUNGER  = hunger
-        self.ENERGY  = energy
-        self.HYGIENE = hygiene
-        self.BLADDER = bladder
-        self.FUN     = fun
-        self.SOCIAL  = social
-
 class Object():
     def __init__(self, broadcasts, name, advertisements, utility):
         self.name = name
-        self.advertisements = advertisements # personality
-        self.utility = utility # stats
+        self.advertisements = advertisements  # personality
+        self.utility = utility  # stats
         self.proximity = 0
         self.broadcasts = broadcasts
 
@@ -50,34 +32,66 @@ class Object():
 
 class Sim():
     def __init__(self, broadcasts, name, traits=None, stats=None):
-        self.name   = name
-        self.traits = traits if traits is not None else Traits(random(), random(), random(), random(), random())
-        self.stats  = stats  if stats  is not None else Stats(1, 1, 1, 1, 1, 1)
+        if traits is None:
+            traits = {
+                    "EXTRAVER": random(),
+                    "OPENNESS": random(),
+                    "AGREEABL": random(),
+                    "CONSCIEN": random(),
+                    "NEUROTIC": random(),
+                    }
+        if stats is None:
+            stats = {
+                    # random initialization only for testing.
+                    "HUNGER": random(),
+                    "ENERGY": random(),
+                    "HYGIENE": random(),
+                    "BLADDER": random(),
+                    "FUN": random(),
+                    "SOCIAL": random(),
+                    }
+        self.name = name
+        self.traits = traits
+        self.stats = dict(stats)
+        self.wants = {}
         self.broadcasts = broadcasts
         self.broadcasts.bind_to(self.broadcast_listener)
+
+    def weightStats(self):
+        # see https://www.desmos.com/calculator/govcchz6s5
+        self.wants["HUNGER"] = (1 / math.exp(self.stats["HUNGER"])) ** 4  # (\frac{1}{e^x})^4
+        self.wants["ENERGY"] = (1 / math.exp(self.stats["ENERGY"])) ** 7  # (\frac{1}{e^x})^7
+        self.wants["HYGIENE"] = 1 - self.stats["HYGIENE"] ** (1 / 2)  # 1 - x^{\frac{1}{2}} (or sqrt(x))
+        self.wants["BLADDER"] = 1 - self.stats["BLADDER"] ** (1 / 3)  # 1 - x^{\frac{1}{3}} (or cube root)
+        self.wants["FUN"] = 1 - self.stats["FUN"] ** (self.traits["EXTRAVER"] + self.traits["OPENNESS"])
+        self.wants["SOCIAL"] = self.wants["FUN"]
 
     def broadcast_listener(self, broadcasts):
         # a new item broadcasted itself
         print(f"Object '{broadcasts[-1].name}' broadcasted")
+        self.weightStats()
+        self.print_dict(self.wants)
+        self.print_dict(self.stats)
 
     def print_dict(self, dict):
-        for dict_item, dict_value in dict.__dict__.items():
+        for dict_item, dict_value in dict.items():
             padding = 8 - len(dict_item)
-            print(f"{dict_item}{padding * ' '} : {dict_value}")
+            print(f"{dict_item}{padding * ' '}: {dict_value}")
 
     def print_char(self):
-        print(f"{'-'*10} {self.name} {'-'*10}")
+        print(f"{'-' * 10} {self.name} {'-' * 10}")
         self.print_dict(self.traits)
         self.print_dict(self.stats)
-        print(f"{'-'*11}{'-'*len(self.name)}{'-'*11}")
+        print(f"{'-' * 11}{'-' * len(self.name)}{'-' * 11}")
+
 
 if __name__ == '__main__':
-    globals = GLOBALS()
+    globals_obj = GLOBALS()
 
-    jacob = Sim(globals, "Jacob")
+    jacob = Sim(globals_obj, "Jacob")
     jacob.print_char()
 
-    fridge = Object(globals, "Fridge", {}, {
+    fridge = Object(globals_obj, "Fridge", {}, {
         "HUNGER":   10,
         "ENERGY":    5,
         "BLADDER": -10,
