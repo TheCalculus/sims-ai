@@ -1,7 +1,7 @@
 import math
 from random import random, randint
 
-class GLOBALS(object):
+class GLOBALS:
     def __init__(self):
         self._broadcasts = []
         self._observers = []
@@ -19,7 +19,7 @@ class GLOBALS(object):
     def bind_to(self, callback):
         self._observers.append(callback)
 
-class Object():
+class Object:
     def __init__(self, broadcasts, name, advertisements, utility):
         self.name = name
         self.advertisements = advertisements  # personality
@@ -30,26 +30,23 @@ class Object():
     def broadcast(self):
         self.broadcasts.BROADCASTS = self
 
-class Sim():
+class Sim:
     def __init__(self, broadcasts, name, traits=None, stats=None):
-        if traits is None:
-            traits = {
-                    "EXTRAVER": random(),
-                    "OPENNESS": random(),
-                    "AGREEABL": random(),
-                    "CONSCIEN": random(),
-                    "NEUROTIC": random(),
-                    }
-        if stats is None:
-            stats = {
-                    # random initialization only for testing.
-                    "HUNGER": random(),
-                    "ENERGY": random(),
-                    "HYGIENE": random(),
-                    "BLADDER": random(),
-                    "FUN": random(),
-                    "SOCIAL": random(),
-                    }
+        traits = traits or {
+            "EXTRAVER": random(),
+            "OPENNESS": random(),
+            "AGREEABL": random(),
+            "CONSCIEN": random(),
+            "NEUROTIC": random(),
+        }
+        stats = stats or {
+            "HUNGER": random(),
+            "ENERGY": random(),
+            "HYGIENE": random(),
+            "BLADDER": random(),
+            "FUN": random(),
+            "SOCIAL": random(),
+        }
         self.name = name
         self.traits = traits
         self.stats = dict(stats)
@@ -57,26 +54,25 @@ class Sim():
         self.broadcasts = broadcasts
         self.broadcasts.bind_to(self.broadcast_listener)
 
-    def weighStats(self):
-        # see https://www.desmos.com/calculator/govcchz6s5
-        self.wants["HUNGER"]  = (1 / math.exp(self.stats["HUNGER"])) ** 4  # (\frac{1}{e^x})^4
-        self.wants["ENERGY"]  = (1 / math.exp(self.stats["ENERGY"])) ** 7  # (\frac{1}{e^x})^7
-        self.wants["HYGIENE"] = 1 - self.stats["HYGIENE"] ** (1 / 2)       # 1 - x^{\frac{1}{2}} (or sqrt(x))
-        self.wants["BLADDER"] = 1 - self.stats["BLADDER"] ** (1 / 3)       # 1 - x^{\frac{1}{3}} (or cube root)
-        self.wants["FUN"]     = 1 - self.stats["FUN"] ** (self.traits["EXTRAVER"] + self.traits["OPENNESS"])
-        self.wants["SOCIAL"]  = self.wants["FUN"]
-
-        return sorted(self.wants.items(), key=lambda x: x[1], reverse=True)
+    def weigh_stats(self):
+        wants = {}
+        wants["HUNGER"]  = (1 / math.exp(self.stats["HUNGER"])) ** 4  # (\frac{1}{e^x})^4
+        wants["ENERGY"]  = (1 / math.exp(self.stats["ENERGY"])) ** 7  # (\frac{1}{e^x})^7
+        wants["HYGIENE"] = 1 - self.stats["HYGIENE"] ** (1 / 2)       # 1 - x^{\frac{1}{2}} (or sqrt(x))
+        wants["BLADDER"] = 1 - self.stats["BLADDER"] ** (1 / 3)       # 1 - x^{\frac{1}{3}} (or cube root)
+        wants["FUN"]     = 1 - self.stats["FUN"] ** (self.traits["EXTRAVER"] + self.traits["OPENNESS"])
+        wants["SOCIAL"]  = wants["FUN"]
+        return sorted(wants.items(), key=lambda x: x[1], reverse=True)
 
     def broadcast_listener(self, broadcasts):
         # a new item broadcasted itself
         print(f"Object '{broadcasts[-1].name}' broadcasted")
-        weighedStats = self.weighStats()
-        preference   = weighedStats[randint(0, 2)]
-        print(f"Sim chose {preference}...\n...with priorities {weighedStats}")
+        weighed_stats = self.weigh_stats()
+        preference = weighed_stats[randint(0, 2)]
+        print(f"Sim chose {preference}...\n...with priorities {weighed_stats}")
 
-    def print_dict(self, dict):
-        for dict_item, dict_value in dict.items():
+    def print_dict(self, dictionary):
+        for dict_item, dict_value in dictionary.items():
             padding = 8 - len(dict_item)
             print(f"{dict_item}{padding * ' '}: {dict_value}")
 
@@ -100,3 +96,4 @@ if __name__ == '__main__':
         "HYGIENE":  -5,
     })
     fridge.broadcast()
+
