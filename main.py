@@ -72,7 +72,8 @@ class Sim():
         # a new item broadcasted itself
         print(f"Object '{broadcasts[-1].name}' broadcasted")
         weighedStats = self.weighStats()
-        print(f"Sim chose {weighedStats[randint(0, 2)]}...\n...with priorities {weighedStats}")
+        preference   = weighedStats[randint(0, 2)]
+        print(f"Sim chose {preference}...\n...with priorities {weighedStats}")
 
     def print_dict(self, dict):
         for dict_item, dict_value in dict.items():
