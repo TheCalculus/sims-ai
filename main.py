@@ -1,5 +1,6 @@
-import math
-from random import random, randint
+from math import exp
+from random import random, randint, uniform
+from time import sleep
 
 
 class GLOBALS:
@@ -36,13 +37,14 @@ class Object:
 class Sim:
     def __init__(self, broadcasts, name, traits=None, stats=None):
         traits = traits or {
-            "ANGER": random(),
-            "ACTIVE": random(),
-            "CHEER": random(),
-            "GENIUS": random(),
-            "CREATIVE": random(),
-            "LAZY": random(),
-            "SOCIAL": random(),
+            "ANGER": uniform(0.25, 1),
+            "ACTIVE": uniform(0.25, 1),
+            "CHEER": uniform(0.25, 1),
+            "GENIUS": uniform(0.25, 1),
+            "CREATIVE": uniform(0.25, 1),
+            "LAZY": uniform(0.25, 1),
+            # implement proximity measuring to object to show this
+            "SOCIAL": uniform(0.25, 1),
         }
         stats = stats or {
             "HUNGER": random(),
@@ -51,7 +53,7 @@ class Sim:
             "BLADDER": random(),
             "FUN": random(),
             "SOCIAL": random(),
-            "SATISF": random(),  # increased to promote behaviours that reflect traits
+            "SATISF": random(),  # increased to promote behaviors that reflect traits
         }
         self.name = name
         self.traits = traits
@@ -60,27 +62,44 @@ class Sim:
         self.broadcasts = broadcasts
         self.broadcasts.bind_to(self.broadcast_listener)
 
+    def reduce_stats(self):
+        for stat in self.stats:
+            self.stats[stat] -= random() / 10
+            if self.stats[stat] < 0:
+                self.stats[stat] = 0
+        if (
+            self.stats["HUNGER"] < 0.15
+            or self.stats["HYGIENE"] < 0.05
+            or self.stats["BLADDER"] < 0.1
+            or self.stats["ENERGY"] < 0.05
+        ):
+            print("sim failed to maintain itself")
+            exit()
+
     def weigh_stats(self):
         wants = {}
-        wants["HUNGER"] = (1 / math.exp(self.stats["HUNGER"])) ** 4  # (\frac{1}{e^x})^4
-        wants["ENERGY"] = (1 / math.exp(self.stats["ENERGY"])) ** 7  # (\frac{1}{e^x})^7
-        wants["HYGIENE"] = 1 - self.stats["HYGIENE"] ** (
-            1 / 2
-        )  # 1 - x^{\frac{1}{2}} (or sqrt(x))
-        wants["BLADDER"] = 1 - self.stats["BLADDER"] ** (
-            1 / 3
-        )  # 1 - x^{\frac{1}{3}} (or cube root)
+
+        wants["HUNGER"] = (1 / exp(self.stats["HUNGER"])) ** 4
+        wants["ENERGY"] = (1 / exp(self.stats["ENERGY"])) ** (
+            7 - 7 * self.traits["ACTIVE"]
+        )
+        wants["HYGIENE"] = 1 - self.stats["HYGIENE"] ** (1 / 2)
+        wants["BLADDER"] = 1 - self.stats["BLADDER"] ** (1 / 3)
         wants["FUN"] = 1 - self.stats["FUN"] ** self.traits["SOCIAL"]
         wants["SOCIAL"] = wants["FUN"]
-        wants["SATISF"] = 1 / math.exp(self.stats["SATISF"])  # \frac{1}{e^x}
+        wants["SATISF"] = 1 / exp(self.stats["SATISF"])
+
         return sorted(wants.items(), key=lambda x: x[1], reverse=True)
 
     def broadcast_listener(self, broadcasts):
         # a new item broadcasted itself
         print(f"Object '{broadcasts[-1].name}' broadcasted")
         weighed_stats = self.weigh_stats()
-        preference = weighed_stats[randint(0, 2)]
-        print(f"Sim chose {preference}...\n...with priorities {weighed_stats}")
+        preference = weighed_stats[randint(0, 1)]
+        print(f"Sim chose {preference[0]}...\n...with priorities {weighed_stats}")
+        self.stats[preference[0]] += 0.5
+        if self.stats[preference[0]] > 1:
+            self.stats[preference[0]] = 1
 
     def print_dict(self, dictionary):
         for dict_item, dict_value in dictionary.items():
@@ -103,7 +122,7 @@ if __name__ == "__main__":
     fridge = Object(
         globals_obj,
         "Fridge",
-        {  # TODO: weight these on basis of needs.
+        {  # TODO: weight these on the basis of needs.
             # a starving person should not lose "active" as much as a full person
             "ACTIVE": -3,
             "CHEER": 4,
@@ -117,3 +136,9 @@ if __name__ == "__main__":
         },
     )
     fridge.broadcast()
+
+    for i in range(10):
+        jacob.reduce_stats()
+        jacob.print_char()
+        fridge.broadcast()
+        sleep(1)
